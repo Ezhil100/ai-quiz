@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neuro Quiz - Test Your Limits</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-gradient"></div>
+    
+    <!-- Welcome Screen -->
+    <div id="welcomeScreen" class="screen active">
+        <div class="welcome-container">
+            <div class="logo-pulse">⚡</div>
+            <h1 class="title-glow">NEURO QUIZ</h1>
+            <p class="subtitle">5 Questions. Maximum Engagement.</p>
+            
+            <!-- User Stats Card -->
+            <div id="userStatsCard" class="user-stats-card glass">
+                <div class="stats-row">
+                    <div class="stat-mini">
+                        <span class="stat-mini-value" id="totalQuizzesDisplay">0</span>
+                        <span class="stat-mini-label">QUIZZES</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value" id="overallAccuracyDisplay">0%</span>
+                        <span class="stat-mini-label">ACCURACY</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-value" id="dailyStreakDisplay">0🔥</span>
+                        <span class="stat-mini-label">DAY STREAK</span>
+                    </div>
+                </div>
+                <div id="badgesDisplay" class="badges-display"></div>
+            </div>
+            
+            <button id="startBtn" class="cta-button">
+                <span>START CHALLENGE</span>
+                <div class="button-glow"></div>
+            </button>
+            
+            <button id="teamModeBtn" class="secondary-button">
+                <span>👥 TEAM MODE</span>
+            </button>
+            
+            <button id="viewDashboardBtn" class="secondary-button">
+                <span>📊 VIEW ANALYTICS</span>
+            </button>
+            
+            <button id="viewLeaderboardBtn" class="secondary-button">
+                <span>🏆 LEADERBOARD</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboardScreen" class="screen">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">Performance Analytics</h1>
+                <button id="closeDashboardBtn" class="icon-btn">✕</button>
+            </div>
+            
+            <!-- Overview Cards -->
+            <div class="overview-grid">
+                <div class="overview-card glass">
+                    <div class="overview-icon">🎯</div>
+                    <div class="overview-value" id="dash-accuracy">0%</div>
+                    <div class="overview-label">Overall Accuracy</div>
+                </div>
+                <div class="overview-card glass">
+                    <div class="overview-icon">⚡</div>
+                    <div class="overview-value" id="dash-speed">0s</div>
+                    <div class="overview-label">Avg Response Time</div>
+                </div>
+                <div class="overview-card glass">
+                    <div class="overview-icon">🔥</div>
+                    <div class="overview-value" id="dash-streak">0</div>
+                    <div class="overview-label">Best Streak</div>
+                </div>
+                <div class="overview-card glass">
+                    <div class="overview-icon">📚</div>
+                    <div class="overview-value" id="dash-total">0</div>
+                    <div class="overview-label">Total Questions</div>
+                </div>
+            </div>
+            
+            <!-- Topic Performance -->
+            <div class="dashboard-section glass">
+                <h2 class="section-title">Topic Performance</h2>
+                <div id="topicPerformance" class="topic-grid"></div>
+            </div>
+            
+            <!-- Achievements -->
+            <div class="dashboard-section glass">
+                <h2 class="section-title">Achievements & Badges</h2>
+                <div id="achievementsGrid" class="achievements-grid"></div>
+            </div>
+            
+            <!-- AI Insights -->
+            <div class="dashboard-section glass ai-insights">
+                <div class="section-header">
+                    <h2 class="section-title">🧠 AI Insights & Recommendations</h2>
+                </div>
+                <div id="aiInsights" class="insights-content">
+                    <p>Generating personalized insights...</p>
+                </div>
+            </div>
+            
+            <!-- Performance Trends -->
+            <div class="dashboard-section glass">
+                <h2 class="section-title">Performance Trends</h2>
+                <div id="performanceTrends" class="trends-content"></div>
+            </div>
+            
+            <!-- Study Recommendations -->
+            <div class="dashboard-section glass">
+                <h2 class="section-title">📖 Study Recommendations</h2>
+                <div id="studyRecs" class="study-recommendations"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Screen -->
+    <div id="leaderboardScreen" class="screen">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">🏆 Global Leaderboard</h1>
+                <button id="closeLeaderboardBtn" class="icon-btn">✕</button>
+            </div>
+            
+            <div class="leaderboard-tabs">
+                <button class="tab-btn active" data-tab="global">🌍 Global</button>
+                <button class="tab-btn" data-tab="team">👥 Teams</button>
+                <button class="tab-btn" data-tab="daily">📅 Today</button>
+            </div>
+            
+            <div id="leaderboardContent" class="leaderboard-content glass">
+                <!-- Leaderboard entries will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Mode Setup Screen -->
+    <div id="teamSetupScreen" class="screen">
+        <div class="welcome-container">
+            <h1 class="title-glow">👥 TEAM MODE</h1>
+            <p class="subtitle">Collaborate and compete together</p>
+            
+            <div class="team-setup-form glass">
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" id="playerNameInput" placeholder="Enter your name" />
+                </div>
+                
+                <div class="form-group">
+                    <label>Team Name</label>
+                    <input type="text" id="teamNameInput" placeholder="Enter team name" />
+                </div>
+                
+                <div class="form-group">
+                    <label>Team Size</label>
+                    <select id="teamSizeSelect">
+                        <option value="2">2 Players</option>
+                        <option value="3">3 Players</option>
+                        <option value="4">4 Players</option>
+                    </select>
+                </div>
+                
+                <button id="startTeamQuizBtn" class="cta-button">
+                    <span>START TEAM CHALLENGE</span>
+                    <div class="button-glow"></div>
+                </button>
+                
+                <button id="cancelTeamModeBtn" class="secondary-button">
+                    <span>BACK</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quizScreen" class="screen">
+        <!-- Top HUD -->
+        <div class="hud">
+            <div class="hud-item">
+                <div class="label">SCORE</div>
+                <div id="scoreDisplay" class="value">0</div>
+            </div>
+            <div class="hud-item">
+                <div class="label">STREAK</div>
+                <div id="streakDisplay" class="value streak-value">
+                    <span id="streakCount">0</span>
+                    <span id="streakFire" class="fire-icon">🔥</span>
+                </div>
+            </div>
+            <div class="hud-item">
+                <div class="label">TIME</div>
+                <div id="timerDisplay" class="value">15s</div>
+            </div>
+            <div class="hud-item">
+                <div class="label">DIFFICULTY</div>
+                <div id="difficultyDisplay" class="value">MEDIUM</div>
+            </div>
+        </div>
+
+        <!-- Circular Timer -->
+        <div class="timer-circle">
+            <svg width="100" height="100">
+                <circle cx="50" cy="50" r="45" class="timer-bg"></circle>
+                <circle id="timerCircle" cx="50" cy="50" r="45" class="timer-progress"></circle>
+            </svg>
+            <div id="timerNumber" class="timer-number">15</div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-label">
+                <span>Question <span id="currentQ">1</span>/5</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="question-container">
+            <!-- Power-Ups Bar -->
+            <div id="powerupsBar" class="powerups-bar glass">
+                <div class="powerup-points">
+                    <span class="points-icon">⚡</span>
+                    <span id="powerupPoints">200</span>
+                </div>
+                <button class="powerup-btn" data-powerup="HINT" title="AI Hint - 50pts">
+                    💡<span class="powerup-cost">50</span>
+                </button>
+                <button class="powerup-btn" data-powerup="FIFTY_FIFTY" title="50/50 - 75pts">
+                    ➗<span class="powerup-cost">75</span>
+                </button>
+                <button class="powerup-btn" data-powerup="TIME_FREEZE" title="Time Freeze - 100pts">
+                    ⏰<span class="powerup-cost">100</span>
+                </button>
+                <button class="powerup-btn" data-powerup="DOUBLE_POINTS" title="Double Points - 150pts">
+                    ✖️2<span class="powerup-cost">150</span>
+                </button>
+            </div>
+            
+            <div id="questionCard" class="question-card glass">
+                <div class="question-number">Q<span id="questionNum">1</span></div>
+                <h2 id="questionText" class="question-text"></h2>
+                
+                <!-- Options Grid -->
+                <div id="optionsGrid" class="options-grid">
+                    <!-- Options will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Toast Messages -->
+        <div id="aiToast" class="ai-toast">
+            <div class="ai-icon">🧠</div>
+            <div id="aiMessage" class="ai-message"></div>
+        </div>
+        
+        <!-- AI Performance Tracker -->
+        <div id="aiTracker" class="ai-tracker">
+            <div class="tracker-label">AI OBSERVING</div>
+            <div id="trackerText" class="tracker-text">Analyzing your style...</div>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="resultsScreen" class="screen">
+        <div class="results-container glass">
+            <div class="results-header">
+                <div class="trophy-icon">🏆</div>
+                <h1 class="results-title">CHALLENGE COMPLETE</h1>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card glass">
+                    <div class="stat-label">ACCURACY</div>
+                    <div id="accuracyStat" class="stat-value">0%</div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-label">FINAL SCORE</div>
+                    <div id="finalScore" class="stat-value">0</div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-label">AVG SPEED</div>
+                    <div id="avgSpeed" class="stat-value">0s</div>
+                </div>
+            </div>
+
+            <!-- AI Performance Summary -->
+            <div class="ai-summary glass">
+                <div class="ai-summary-header">
+                    <span class="ai-icon">🧠</span>
+                    <span>PERFORMANCE ANALYSIS</span>
+                </div>
+                <p id="aiSummary" class="ai-summary-text">Analyzing your performance...</p>
+            </div>
+
+            <button id="restartBtn" class="cta-button">
+                <span>PLAY AGAIN</span>
+                <div class="button-glow"></div>
+            </button>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
