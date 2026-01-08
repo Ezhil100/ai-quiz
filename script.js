@@ -143,6 +143,7 @@ const startBtn = document.getElementById('startBtn');
 const restartBtn = document.getElementById('restartBtn');
 const viewDashboardBtn = document.getElementById('viewDashboardBtn');
 const closeDashboardBtn = document.getElementById('closeDashboardBtn');
+const backToMenuBtn = document.getElementById('backToMenuBtn');
 
 const scoreDisplay = document.getElementById('scoreDisplay');
 const streakDisplay = document.getElementById('streakCount');
@@ -185,6 +186,9 @@ const leaderboardContent = document.getElementById('leaderboardContent');
 const powerupsBar = document.getElementById('powerupsBar');
 const powerupPointsDisplay = document.getElementById('powerupPoints');
 
+// AI Explanation Panel
+let aiExplanationPanel = null;
+
 // ===== GROQ AI CONFIGURATION =====
 
 
@@ -193,6 +197,7 @@ startBtn.addEventListener('click', startQuiz);
 restartBtn.addEventListener('click', resetQuiz);
 viewDashboardBtn.addEventListener('click', openDashboard);
 closeDashboardBtn.addEventListener('click', closeDashboard);
+backToMenuBtn.addEventListener('click', backToMenu);
 viewLeaderboardBtn.addEventListener('click', openLeaderboard);
 closeLeaderboardBtn.addEventListener('click', closeLeaderboard);
 teamModeBtn.addEventListener('click', openTeamSetup);
@@ -718,7 +723,6 @@ function handleAnswer(selectedIndex, selectedBtn) {
         
         // Adjust difficulty and generate AI feedback
         adjustDifficultyOnAnswer(true, responseTime);
-        generateAIFeedback('correct', responseTime);
         
     } else {
         wrongAnswers++;
@@ -759,29 +763,24 @@ function handleAnswer(selectedIndex, selectedBtn) {
             }, 1500);
         }
         
-        // Generate AI explanation for wrong answer
-        setTimeout(() => {
-            generateAIExplanation(q);
-        }, 1800);
-        
         // Adjust difficulty and generate AI feedback
         adjustDifficultyOnAnswer(false, responseTime);
-        generateAIFeedback('wrong', responseTime);
     }
     
     // Reset 50/50 powerup for next question
     activePowerups.fiftyFiftyUsed = false;
     
+    // Show comprehensive AI explanation after 1 second
     setTimeout(() => {
-        nextQuestion();
-    }, 2500);
+        generateComprehensiveExplanation(q, isCorrect, selectedIndex, responseTime);
+    }, 1000);
 }
 
 function handleMultiAnswer(selectedIndices, submitBtn) {
     stopTimer();
     
-    const responseTime = ((Date.now() - questionStartTime) / 1000).toFixed(2);
-    responseTimes.push(parseFloat(responseTime));
+    const responseTime = (Date.now() - questionStartTime) / 1000;
+    responseTimes.push(responseTime);
     
     const q = selectedQuestions[currentQuestion];
     
@@ -868,19 +867,15 @@ function handleMultiAnswer(selectedIndices, submitBtn) {
         });
         
         updateStreak();
-        
-        setTimeout(() => {
-            generateAIExplanation(q);
-        }, 1800);
-        
         adjustDifficultyOnAnswer(false, responseTime);
     }
     
     activePowerups.fiftyFiftyUsed = false;
     
+    // Show comprehensive AI explanation after 1 second
     setTimeout(() => {
-        nextQuestion();
-    }, 2500);
+        generateComprehensiveExplanation(q, isCorrect, selectedIndices, responseTime);
+    }, 1000);
 }
 
 
@@ -1030,6 +1025,369 @@ function adjustDifficultyOnAnswer(isCorrect, responseTime) {
             showAIToast(`Dialing back to ${newLabel} let's find your groove again`, 2800);
         }, 1200);
     }
+}
+
+// ===== ENHANCED AI EXPLANATION SYSTEM =====
+
+// Create backdrop overlay
+function createAIBackdrop() {
+    if (document.getElementById('aiExplanationBackdrop')) return;
+    
+    const backdrop = document.createElement('div');
+    backdrop.id = 'aiExplanationBackdrop';
+    backdrop.className = 'ai-explanation-backdrop';
+    document.getElementById('quizScreen').appendChild(backdrop);
+    
+    // Click backdrop to close (optional - can disable this)
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+            // hideAIExplanationPanel(); // Uncomment to allow closing by clicking backdrop
+        }
+    });
+}
+
+// Create AI Explanation Panel HTML structure
+function createAIExplanationPanel() {
+    if (document.getElementById('aiExplanationPanel')) return;
+    
+    // Create backdrop first
+    createAIBackdrop();
+    
+    const panel = document.createElement('div');
+    panel.id = 'aiExplanationPanel';
+    panel.className = 'ai-explanation-panel glass';
+    panel.innerHTML = `
+        <div class="ai-explanation-header">
+            <div class="ai-avatar">🤖</div>
+            <div class="ai-header-text">
+                <h3 class="ai-tutor-name">AI Learning Assistant</h3>
+                <p class="ai-status">Analyzing your response...</p>
+            </div>
+        </div>
+        
+        <div class="ai-explanation-content">
+            <!-- Result Badge -->
+            <div id="aiResultBadge" class="result-badge">
+                <div class="badge-icon"></div>
+                <div class="badge-text"></div>
+            </div>
+            
+            <!-- Performance Summary -->
+            <div class="performance-summary">
+                <div class="summary-item">
+                    <span class="summary-label">Response Time:</span>
+                    <span id="aiResponseTime" class="summary-value">--</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Difficulty:</span>
+                    <span id="aiDifficulty" class="summary-value">--</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Topic:</span>
+                    <span id="aiTopic" class="summary-value">--</span>
+                </div>
+            </div>
+            
+            <!-- AI Personalized Message -->
+            <div class="ai-message-box">
+                <div class="message-label">💬 Personalized Feedback</div>
+                <div id="aiPersonalizedMessage" class="message-content">
+                    Generating your personalized feedback...
+                </div>
+            </div>
+            
+            <!-- Answer Explanation -->
+            <div class="answer-explanation-box">
+                <div class="explanation-label">📚 Answer Explanation</div>
+                <div id="aiAnswerExplanation" class="explanation-content">
+                    <div class="correct-answer-display">
+                        <strong>Correct Answer:</strong> <span id="correctAnswerText">--</span>
+                    </div>
+                    <div id="detailedExplanation" class="detailed-explanation">
+                        Loading explanation...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Learning Insights -->
+            <div class="learning-insights-box">
+                <div class="insights-label">💡 Key Learning Points</div>
+                <div id="aiLearningInsights" class="insights-content">
+                    Generating insights...
+                </div>
+            </div>
+            
+            <!-- Next Action -->
+            <div class="next-action">
+                <button id="continueBtn" class="continue-button">
+                    <span>Continue to Next Question</span>
+                    <span class="arrow">→</span>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('quizScreen').appendChild(panel);
+    aiExplanationPanel = panel;
+    
+    // Add event listener for continue button
+    document.getElementById('continueBtn').addEventListener('click', () => {
+        hideAIExplanationPanel();
+        nextQuestion();
+    });
+}
+
+// Show AI Explanation Panel with animation
+function showAIExplanationPanel() {
+    if (!aiExplanationPanel) createAIExplanationPanel();
+    
+    const backdrop = document.getElementById('aiExplanationBackdrop');
+    
+    // Show backdrop first
+    if (backdrop) {
+        backdrop.classList.add('show');
+    }
+    
+    // Then show panel
+    aiExplanationPanel.classList.add('show');
+    
+    gsap.fromTo(aiExplanationPanel,
+        { opacity: 0, y: 50, scale: 0.95 },
+        { 
+            opacity: 1, 
+            y: 0, 
+            scale: 1,
+            duration: 0.6, 
+            ease: 'back.out(1.7)'
+        }
+    );
+}
+
+// Hide AI Explanation Panel
+function hideAIExplanationPanel() {
+    if (!aiExplanationPanel) return;
+    
+    const backdrop = document.getElementById('aiExplanationBackdrop');
+    
+    gsap.to(aiExplanationPanel, {
+        opacity: 0,
+        y: 20,
+        duration: 0.4,
+        ease: 'power2.in',
+        onComplete: () => {
+            aiExplanationPanel.classList.remove('show');
+            // Hide backdrop after panel
+            if (backdrop) {
+                backdrop.classList.remove('show');
+            }
+        }
+    });
+}
+
+// Generate comprehensive AI explanation after answer
+async function generateComprehensiveExplanation(question, isCorrect, selectedIndex, responseTime) {
+    createAIExplanationPanel();
+    showAIExplanationPanel();
+    
+    const correctAnswer = Array.isArray(question.correct) 
+        ? question.correct.map(i => question.options[i]).join(', ')
+        : question.options[question.correct];
+    
+    const userAnswer = Array.isArray(selectedIndex)
+        ? selectedIndex.map(i => question.options[i]).join(', ')
+        : question.options[selectedIndex];
+    
+    // Update result badge
+    const badge = document.getElementById('aiResultBadge');
+    const badgeIcon = badge.querySelector('.badge-icon');
+    const badgeText = badge.querySelector('.badge-text');
+    
+    if (isCorrect) {
+        badge.className = 'result-badge correct';
+        badgeIcon.textContent = '✓';
+        badgeText.textContent = 'Correct!';
+    } else {
+        badge.className = 'result-badge incorrect';
+        badgeIcon.textContent = '✗';
+        badgeText.textContent = 'Incorrect';
+    }
+    
+    // Update performance summary
+    document.getElementById('aiResponseTime').textContent = `${responseTime.toFixed(1)}s`;
+    document.getElementById('aiDifficulty').textContent = DIFFICULTY_LABELS[question.difficulty] || question.difficulty.toUpperCase();
+    document.getElementById('aiTopic').textContent = question.topic.charAt(0).toUpperCase() + question.topic.slice(1);
+    
+    // Display correct answer
+    document.getElementById('correctAnswerText').textContent = correctAnswer;
+    
+    // Show built-in explanation if available
+    const detailedExp = document.getElementById('detailedExplanation');
+    if (question.explanation) {
+        detailedExp.textContent = question.explanation;
+    } else {
+        detailedExp.textContent = 'Generating detailed explanation...';
+    }
+    
+    // Generate personalized AI feedback
+    await generatePersonalizedFeedback(question, isCorrect, selectedIndex, userAnswer, correctAnswer, responseTime);
+    
+    // Generate learning insights
+    await generateLearningInsights(question, isCorrect, responseTime);
+}
+
+// Generate personalized feedback based on performance
+async function generatePersonalizedFeedback(question, isCorrect, selectedIndex, userAnswer, correctAnswer, responseTime) {
+    const messageDiv = document.getElementById('aiPersonalizedMessage');
+    messageDiv.innerHTML = '<div class="loading-dots">Analyzing<span>.</span><span>.</span><span>.</span></div>';
+    
+    const isVeryFast = responseTime < 4;
+    const isSlow = responseTime > 10;
+    const currentStreak = streak;
+    const totalCorrect = correctAnswers;
+    const totalWrong = wrongAnswers;
+    
+    // Context about user's learning style
+    const avgSpeed = responseTimes.length > 0 
+        ? (responseTimes.reduce((a,b) => a+b, 0) / responseTimes.length).toFixed(1)
+        : responseTime.toFixed(1);
+    
+    const learningStyle = avgSpeed < 6 ? 'quick decision-maker' : 
+                          avgSpeed < 10 ? 'thoughtful analyzer' : 
+                          'careful deliberator';
+    
+    const prompt = `You are an AI learning tutor providing personalized feedback to a student who just answered a quiz question.
+
+QUESTION CONTEXT:
+- Question: "${question.question}"
+- Topic: ${question.topic}
+- Difficulty: ${question.difficulty}
+- Student's answer: "${userAnswer}"
+- Correct answer: "${correctAnswer}"
+- Result: ${isCorrect ? 'CORRECT' : 'INCORRECT'}
+
+STUDENT PERFORMANCE:
+- Response time: ${responseTime.toFixed(1)}s (${isVeryFast ? 'very fast' : isSlow ? 'slow' : 'moderate'})
+- Current streak: ${currentStreak}
+- Session accuracy: ${totalCorrect}/${totalCorrect + totalWrong} correct
+- Learning style: ${learningStyle}
+- Average response time: ${avgSpeed}s
+
+Generate a personalized feedback message (40-60 words) that:
+1. ${isCorrect ? 'Acknowledges their correct answer with specific praise' : 'Empathetically explains what went wrong'}
+2. Comments on their response time and decision-making
+3. ${isCorrect ? 'Encourages them to maintain momentum' : 'Provides encouraging guidance for improvement'}
+4. References their learning style and current performance pattern
+5. Uses a friendly, supportive tutor voice
+
+Make it feel personal and observant, like you've been watching their progress.`;
+
+    try {
+        const response = await fetch(GROQ_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.8,
+                max_tokens: 150
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const feedback = data.choices[0]?.message?.content?.trim() || 
+                           'Great effort! Keep learning and improving.';
+            
+            // Typewriter effect
+            typeWriter(messageDiv, feedback, 30);
+        } else {
+            throw new Error('API call failed');
+        }
+    } catch (error) {
+        console.error('Error generating personalized feedback:', error);
+        
+        // Fallback personalized message
+        const fallbackMessage = isCorrect 
+            ? `Excellent work! You answered in ${responseTime.toFixed(1)}s. ${currentStreak > 0 ? `You're on a ${currentStreak}-question streak!` : 'Keep this momentum going!'} Your ${learningStyle} approach is working well for ${question.topic} questions.`
+            : `You selected "${userAnswer}" but the correct answer is "${correctAnswer}". ${isSlow ? 'Take your time to think through each option.' : 'Consider all options carefully before selecting.'} Don't worry, ${question.topic} can be tricky. You're learning with each question!`;
+        
+        typeWriter(messageDiv, fallbackMessage, 30);
+    }
+}
+
+// Generate learning insights and tips
+async function generateLearningInsights(question, isCorrect, responseTime) {
+    const insightsDiv = document.getElementById('aiLearningInsights');
+    insightsDiv.innerHTML = '<div class="loading-dots">Generating insights<span>.</span><span>.</span><span>.</span></div>';
+    
+    const topicPerf = sessionTopicPerformance[question.topic];
+    const topicAccuracy = topicPerf 
+        ? ((topicPerf.correct / topicPerf.total) * 100).toFixed(0)
+        : (isCorrect ? 100 : 0);
+    
+    const prompt = `You are an AI learning coach providing study insights after a quiz question.
+
+CONTEXT:
+- Question topic: ${question.topic}
+- Difficulty: ${question.difficulty}
+- Student result: ${isCorrect ? 'Correct' : 'Incorrect'}
+- Topic accuracy so far: ${topicAccuracy}%
+- Response time: ${responseTime.toFixed(1)}s
+
+Generate 3 key learning insights (15-20 words each) that help the student:
+1. A specific study tip related to this ${question.topic} topic
+2. A strategy for approaching ${question.difficulty} difficulty questions
+3. ${isCorrect ? 'How to maintain this performance level' : 'What to focus on to improve in this area'}
+
+Format as a numbered list. Be specific, actionable, and encouraging.`;
+
+    try {
+        const response = await fetch(GROQ_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7,
+                max_tokens: 200
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const insights = data.choices[0]?.message?.content?.trim() || 
+                           generateFallbackInsights(question, isCorrect, topicAccuracy);
+            
+            // Animate insights appearing
+            insightsDiv.innerHTML = insights.replace(/\n/g, '<br>');
+            gsap.fromTo(insightsDiv,
+                { opacity: 0 },
+                { opacity: 1, duration: 0.5, delay: 0.3 }
+            );
+        } else {
+            throw new Error('API call failed');
+        }
+    } catch (error) {
+        console.error('Error generating insights:', error);
+        insightsDiv.innerHTML = generateFallbackInsights(question, isCorrect, topicAccuracy);
+    }
+}
+
+// Fallback insights if API fails
+function generateFallbackInsights(question, isCorrect, topicAccuracy) {
+    const insights = [
+        `📖 ${question.topic.charAt(0).toUpperCase() + question.topic.slice(1)}: ${topicAccuracy >= 70 ? 'You\'re performing well in this topic! Continue practicing to maintain your edge.' : 'This topic needs more attention. Review key concepts and practice similar questions.'}`,
+        `⚡ Speed Strategy: ${responseTime < 6 ? 'Your quick responses show confidence. Make sure accuracy stays high too!' : 'Take your time to analyze each option carefully. Accuracy is more important than speed.'}`,
+        `🎯 Next Steps: ${isCorrect ? 'Build on this success by challenging yourself with harder questions.' : 'Learn from this mistake. Review the explanation and try similar practice questions.'}`
+    ];
+    
+    return insights.join('<br><br>');
 }
 
 // ===== AI INTEGRATION =====
@@ -1415,6 +1773,27 @@ function openDashboard() {
 function closeDashboard() {
     playSound('click');
     animateScreenTransition(dashboardScreen, welcomeScreen);
+}
+
+function backToMenu() {
+    playSound('click');
+    
+    // Hide AI explanation panel if it's showing
+    if (aiExplanationPanel) {
+        hideAIExplanationPanel();
+    }
+    
+    // Stop timer if running
+    stopTimer();
+    
+    // Show confirmation if quiz is in progress
+    if (currentQuestion > 0 && currentQuestion < TOTAL_QUESTIONS) {
+        const confirm = window.confirm('Are you sure you want to quit? Your progress will be lost.');
+        if (!confirm) return;
+    }
+    
+    // Reset and go back to welcome screen
+    animateScreenTransition(quizScreen, welcomeScreen);
 }
 
 function populateDashboard() {
