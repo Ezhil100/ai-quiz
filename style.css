@@ -354,7 +354,7 @@ body {
 /* ===== CIRCULAR TIMER ===== */
 .timer-circle {
     position: fixed;
-    top: 40px;
+    top: 100px;
     right: 40px;
     width: 100px;
     height: 100px;
@@ -641,14 +641,17 @@ body {
     position: fixed;
     top: 20px;
     right: 20px;
-    padding: 8px 14px;
-    background: rgba(157, 78, 221, 0.1);
-    border: 1px solid rgba(157, 78, 221, 0.25);
+    padding: 6px 12px;
+    background: rgba(157, 78, 221, 0.15);
+    border: 1px solid rgba(157, 78, 221, 0.3);
     border-radius: 8px;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
     z-index: 60;
+    backdrop-filter: blur(10px);
+    min-width: 140px;
+    text-align: center;
 }
 
 .ai-tracker.active {
@@ -656,17 +659,21 @@ body {
 }
 
 .tracker-label {
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
-    color: rgba(157, 78, 221, 0.7);
-    letter-spacing: 1px;
+    color: rgba(157, 78, 221, 0.9);
+    letter-spacing: 1.2px;
     margin-bottom: 2px;
+    text-transform: uppercase;
 }
 
 .tracker-text {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 /* ===== DASHBOARD SCREEN ===== */
 .dashboard-container {
@@ -1275,8 +1282,23 @@ body {
     .timer-circle {
         width: 80px;
         height: 80px;
-        top: 20px;
+        top: 75px;
         right: 20px;
+    }
+    
+    .ai-tracker {
+        top: 15px;
+        right: 15px;
+        padding: 5px 10px;
+        min-width: 120px;
+    }
+    
+    .tracker-label {
+        font-size: 7px;
+    }
+    
+    .tracker-text {
+        font-size: 9px;
     }
     
     .question-text {
